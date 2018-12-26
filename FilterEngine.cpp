@@ -63,6 +63,11 @@ using namespace mup;
 FilterEngine::FilterEngine()
 	: parser(0)
 {
+	inputBuf = NULL;
+	outputBuf = NULL;
+	doubleBufLen = 0;
+	inputBufChannels = 0;
+	outputBufChannels = 0;
 	preMix = false;
 	capture = false;
 	postMixInstalled = true;
@@ -115,9 +120,51 @@ FilterEngine::~FilterEngine()
 	for (vector<IFilterFactory*>::iterator it = factories.begin(); it != factories.end(); it++)
 		delete *it;
 
+	deleteBufers();
+
 	delete parser;
 	CloseHandle(loadSemaphore);
 	DeleteCriticalSection(&loadSection);
+}
+
+void FilterEngine::deleteBufers() {
+	if (inputBuf != NULL) {
+		for (unsigned i = 0; i < inputBufChannels; i++) {
+			delete inputBuf[i];
+		}
+		for (unsigned i = 0; i < outputBufChannels; i++) {
+			delete outputBuf[i];
+		}
+		delete[] inputBuf;
+		delete[] outputBuf;
+	}
+}
+
+void FilterEngine::allocateBuffers(unsigned frameCount) {
+	if (doubleBufLen < frameCount || inputBufChannels != inputChannelCount 
+		|| outputBufChannels != outputChannelCount) {
+		if (inputBuf != NULL) {
+			for (unsigned i = 0; i < inputBufChannels; i++) {
+				delete inputBuf[i];				
+			}
+			for (unsigned i = 0; i < outputBufChannels; i++) {
+				delete outputBuf[i];
+			}
+			delete[] inputBuf;
+			delete[] outputBuf;
+		}
+		doubleBufLen = frameCount;
+		inputBufChannels = inputChannelCount;
+		outputBufChannels = outputChannelCount;
+		inputBuf = new double*[inputBufChannels];
+		outputBuf = new double*[outputBufChannels];
+		for (unsigned i = 0; i < inputBufChannels; i++) {
+			inputBuf[i] = new double[doubleBufLen];
+		}
+		for (unsigned i = 0; i < outputBufChannels; i++) {
+			outputBuf[i] = new double[doubleBufLen];
+		}
+	}
 }
 
 void FilterEngine::setPreMix(bool preMix)
@@ -148,6 +195,7 @@ void FilterEngine::initialize(float sampleRate, unsigned inputChannelCount, unsi
 	this->maxFrameCount = maxFrameCount;
 	this->transitionCounter = 0;
 	this->transitionLength = (unsigned)(sampleRate / 100);
+	deleteBufers();
 
 	unsigned deviceChannelCount;
 	if (capture)
@@ -384,18 +432,31 @@ void FilterEngine::process(float* output, float* input, unsigned frameCount)
 			return;
 		}
 	}
+	
+	// TODO: re-use inputBuf
+	unsigned totalFrameCount = inputChannelCount * frameCount;
+	double *inputBuf = new double[totalFrameCount];
+	for (unsigned i = 0; i < totalFrameCount; i++)
+		inputBuf[i] = input[i];	
 
-	currentConfig->read(input, frameCount);
+	currentConfig->read(inputBuf, frameCount);
 	currentConfig->process(frameCount);
 
 	if (nextConfig != NULL)
 	{
-		nextConfig->read(input, frameCount);
+		nextConfig->read(inputBuf, frameCount);
 		nextConfig->process(frameCount);
 		transitionCounter = currentConfig->doTransition(nextConfig, frameCount, transitionCounter, transitionLength);
 	}
 
-	currentConfig->write(output, frameCount);
+	totalFrameCount = outputChannelCount * frameCount;
+	double *outputBuf = new double[totalFrameCount];
+	currentConfig->write(outputBuf, frameCount);
+	for (unsigned i = 0; i < totalFrameCount; i++) {
+		output[i] = float(outputBuf[i]);
+	}
+	delete[] outputBuf;
+	delete[] inputBuf;	
 
 	if (nextConfig != NULL && transitionCounter >= transitionLength)
 	{
@@ -424,17 +485,29 @@ void FilterEngine::process(float** output, float** input, unsigned frameCount)
 		}
 	}
 
-	currentConfig->read(input, frameCount);
+	allocateBuffers(frameCount);
+	for (unsigned i = 0; i < inputBufChannels; i++) {
+		for (unsigned j = 0; j < doubleBufLen; j++) {
+			inputBuf[i][j] = input[i][j];
+		}
+	}
+
+	currentConfig->read(inputBuf, frameCount);
 	currentConfig->process(frameCount);
 
 	if (nextConfig != NULL)
 	{
-		nextConfig->read(input, frameCount);
+		nextConfig->read(inputBuf, frameCount);
 		nextConfig->process(frameCount);
 		transitionCounter = currentConfig->doTransition(nextConfig, frameCount, transitionCounter, transitionLength);
 	}
 
-	currentConfig->write(output, frameCount);
+	currentConfig->write(outputBuf, frameCount);
+	for (unsigned i = 0; i < outputBufChannels; i++) {
+		for (unsigned j = 0; j < doubleBufLen; j++) {
+			output[i][j] = float(outputBuf[i][j]);
+		}
+	}
 
 	if (nextConfig != NULL && transitionCounter >= transitionLength)
 	{

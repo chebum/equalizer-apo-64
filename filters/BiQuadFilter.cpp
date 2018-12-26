@@ -63,14 +63,14 @@ vector<wstring> BiQuadFilter::initialize(float sampleRate, unsigned maxFrameCoun
 }
 
 #pragma AVRT_CODE_BEGIN
-void BiQuadFilter::process(float** output, float** input, unsigned frameCount)
+void BiQuadFilter::process(double** output, double** input, unsigned frameCount)
 {
 	for (unsigned i = 0; i < channelCount; i++)
 	{
 		BiQuad bq = biquads[i];
 
-		float* inputChannel = input[i];
-		float* outputChannel = output[i];
+		double* inputChannel = input[i];
+		double* outputChannel = output[i];
 
 		for (unsigned j = 0; j < frameCount; j++)
 			outputChannel[j] = (float)bq.process(inputChannel[j]);

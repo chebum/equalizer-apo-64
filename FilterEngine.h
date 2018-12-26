@@ -69,9 +69,13 @@ private:
 	void addFilters(std::vector<IFilter*> filters);
 	void cleanupConfigurations();
 	static unsigned long __stdcall notificationThread(void* parameter);
+	void deleteBufers();
+	void allocateBuffers(unsigned frameCount);
 
 	std::vector<IFilterFactory*> factories;
 
+	double **inputBuf, **outputBuf;
+	unsigned doubleBufLen, inputBufChannels, outputBufChannels;
 	bool preMix;
 	bool capture;
 	bool postMixInstalled;

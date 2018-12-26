@@ -1,20 +1,20 @@
 ﻿/*
-    This file is part of Equalizer APO, a system-wide equalizer.
-    Copyright (C) 2017  Jonas Thedering
+	This file is part of Equalizer APO, a system-wide equalizer.
+	Copyright (C) 2017  Jonas Thedering
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+	You should have received a copy of the GNU General Public License along
+	with this program; if not, write to the Free Software Foundation, Inc.,
+	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "stdafx.h"
@@ -46,11 +46,11 @@ static intptr_t callback(AEffect* effect, int32_t opcode, int32_t index, intptr_
 		return equalizerApoVSTID;
 
 	case audioMasterGetProductString:
-		strcpy_s((char*) ptr, 64, "Equalizer APO");
+		strcpy_s((char*)ptr, 64, "Equalizer APO");
 		return 1;
 
 	case audioMasterGetVendorVersion:
-		return (intptr_t) (MAJOR << 24 | MINOR << 16 | REVISION << 8 | 0);
+		return (intptr_t)(MAJOR << 24 | MINOR << 16 | REVISION << 8 | 0);
 
 	case audioMasterPinConnected:
 		if (instance != NULL)
@@ -91,17 +91,17 @@ static intptr_t callback(AEffect* effect, int32_t opcode, int32_t index, intptr_
 		return 1;
 
 	case audioMasterCanDo:
-		{
-			char* s = (char*)ptr;
+	{
+		char* s = (char*)ptr;
 #ifdef _DEBUG
-			printf("VST canDo: %s\n", s);
-			fflush(stdout);
+		printf("VST canDo: %s\n", s);
+		fflush(stdout);
 #endif
-			if (strcmp(s, "startStopProcess") == 0 ||
-				strcmp(s, "sizeWindow") == 0)
-				return 1;
-		}
-		return 0;
+		if (strcmp(s, "startStopProcess") == 0 ||
+			strcmp(s, "sizeWindow") == 0)
+			return 1;
+	}
+	return 0;
 
 	case audioMasterAutomate:
 		if (instance != NULL)
@@ -319,20 +319,14 @@ void VSTPluginInstance::startProcessing()
 	effect->dispatcher(effect, effStartProcess, 0, 0, NULL, 0.0f);
 }
 
-void VSTPluginInstance::processReplacing(float** inputArray, float** outputArray, int frameCount)
+void VSTPluginInstance::processReplacing(double** inputArray, double** outputArray, int frameCount)
 {
-	if (effect == NULL)
-		return;
-
-	effect->processReplacing(effect, inputArray, outputArray, frameCount);
+	// TODO: recover
 }
 
-void VSTPluginInstance::process(float** inputArray, float** outputArray, int frameCount)
+void VSTPluginInstance::process(double** inputArray, double** outputArray, int frameCount)
 {
-	if (effect == NULL)
-		return;
-
-	effect->process(effect, inputArray, outputArray, frameCount);
+	// TODO: recover
 }
 
 void VSTPluginInstance::stopProcessing()

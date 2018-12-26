@@ -48,18 +48,18 @@ vector<wstring> GraphicEQFilter::initialize(float sampleRate, unsigned maxFrameC
 
 	channelCount = (unsigned)channelNames.size();
 
-	fftwf_make_planner_thread_safe();
-	fftwf_complex* timeData = fftwf_alloc_complex(filterLength * 2);
-	fftwf_complex* freqData = fftwf_alloc_complex(filterLength * 2);
-	fftwf_plan planForward = fftwf_plan_dft_1d(filterLength * 2, timeData, freqData, FFTW_FORWARD, FFTW_ESTIMATE);
-	fftwf_plan planReverse = fftwf_plan_dft_1d(filterLength * 2, freqData, timeData, FFTW_BACKWARD, FFTW_ESTIMATE);
+	fftw_make_planner_thread_safe();
+	fftw_complex* timeData = fftw_alloc_complex(filterLength * 2);
+	fftw_complex* freqData = fftw_alloc_complex(filterLength * 2);
+	fftw_plan planForward = fftw_plan_dft_1d(filterLength * 2, timeData, freqData, FFTW_FORWARD, FFTW_ESTIMATE);
+	fftw_plan planReverse = fftw_plan_dft_1d(filterLength * 2, freqData, timeData, FFTW_BACKWARD, FFTW_ESTIMATE);
 
 	GainIterator gainIterator(nodes);
 	for (unsigned i = 0; i < filterLength; i++)
 	{
 		double freq = i * 1.0 * sampleRate / (filterLength * 2);
 		double dbGain = gainIterator.gainAt(freq);
-		float gain = (float)pow(10.0, dbGain / 20.0);
+		double gain = (double)pow(10.0, dbGain / 20.0);
 
 		freqData[i][0] = gain;
 		freqData[i][1] = 0;
@@ -69,7 +69,7 @@ vector<wstring> GraphicEQFilter::initialize(float sampleRate, unsigned maxFrameC
 
 	mps(timeData, freqData, planForward, planReverse);
 
-	fftwf_execute(planReverse);
+	fftw_execute(planReverse);
 
 	for (unsigned i = 0; i < 2 * filterLength; i++)
 	{
@@ -79,21 +79,21 @@ vector<wstring> GraphicEQFilter::initialize(float sampleRate, unsigned maxFrameC
 
 	for (unsigned i = 0; i < filterLength; i++)
 	{
-		float factor = (float)(0.5 * (1 + cos(2 * M_PI * i * 1.0 / (2 * filterLength))));
+		double factor = (double)(0.5 * (1 + cos(2 * M_PI * i * 1.0 / (2 * filterLength))));
 		timeData[i][0] *= factor;
 		timeData[i][1] *= factor;
 	}
 
-	float* buf = new float[filterLength];
+	double* buf = new double[filterLength];
 	for (unsigned i = 0; i < filterLength; i++)
 	{
 		buf[i] = timeData[i][0];
 	}
 
-	fftwf_free(timeData);
-	fftwf_free(freqData);
-	fftwf_destroy_plan(planForward);
-	fftwf_destroy_plan(planReverse);
+	fftw_free(timeData);
+	fftw_free(freqData);
+	fftw_destroy_plan(planForward);
+	fftw_destroy_plan(planReverse);
 
 	filters = (HConvSingle*)MemoryHelper::alloc(sizeof(HConvSingle) * channelCount);
 	for (unsigned i = 0; i < channelCount; i++)
@@ -107,15 +107,15 @@ vector<wstring> GraphicEQFilter::initialize(float sampleRate, unsigned maxFrameC
 }
 
 #pragma AVRT_CODE_BEGIN
-void GraphicEQFilter::process(float** output, float** input, unsigned frameCount)
+void GraphicEQFilter::process(double** output, double** input, unsigned frameCount)
 {
 	if (filters == NULL)
 		return;
 
 	for (unsigned i = 0; i < channelCount; i++)
 	{
-		float* inputChannel = input[i];
-		float* outputChannel = output[i];
+		double* inputChannel = input[i];
+		double* outputChannel = output[i];
 		HConvSingle* filter = &filters[i];
 
 		hcPutSingle(filter, inputChannel);
@@ -143,10 +143,10 @@ void GraphicEQFilter::cleanup()
 }
 
 // Minimum phase spectrum from coefficients
-void GraphicEQFilter::mps(fftwf_complex* timeData, fftwf_complex* freqData, fftwf_plan planForward, fftwf_plan planReverse)
+void GraphicEQFilter::mps(fftw_complex* timeData, fftw_complex* freqData, fftw_plan planForward, fftw_plan planReverse)
 {
 	double threshold = pow(10.0, -100.0 / 20.0);
-	float logThreshold = (float)log(threshold);
+	double logThreshold = (double)log(threshold);
 
 	for (unsigned i = 0; i < filterLength * 2; i++)
 	{
@@ -158,7 +158,7 @@ void GraphicEQFilter::mps(fftwf_complex* timeData, fftwf_complex* freqData, fftw
 		freqData[i][1] = 0;
 	}
 
-	fftwf_execute(planReverse);
+	fftw_execute(planReverse);
 
 	for (unsigned i = 0; i < filterLength * 2; i++)
 	{
@@ -176,12 +176,12 @@ void GraphicEQFilter::mps(fftwf_complex* timeData, fftwf_complex* freqData, fftw
 	}
 	timeData[filterLength][1] *= -1;
 
-	fftwf_execute(planForward);
+	fftw_execute(planForward);
 
 	for (unsigned i = 0; i < filterLength * 2; i++)
 	{
 		double eR = exp(freqData[i][0]);
-		freqData[i][0] = float(eR * cos(freqData[i][1]));
-		freqData[i][1] = float(eR * sin(freqData[i][1]));
+		freqData[i][0] = double(eR * cos(freqData[i][1]));
+		freqData[i][1] = double(eR * sin(freqData[i][1]));
 	}
 }

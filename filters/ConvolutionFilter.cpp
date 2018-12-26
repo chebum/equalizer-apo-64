@@ -65,20 +65,20 @@ vector<wstring> ConvolutionFilter::initialize(float sampleRate, unsigned maxFram
 		unsigned fileChannelCount = info.channels;
 		unsigned frameCount = (unsigned)info.frames;
 
-		float* interleavedBuf = new float[frameCount * fileChannelCount];
+		double* interleavedBuf = new double[frameCount * fileChannelCount];
 
 		sf_count_t numRead = 0;
 		while (numRead < frameCount)
-			numRead += sf_readf_float(inFile, interleavedBuf + numRead * fileChannelCount, frameCount - numRead);
+			numRead += sf_readf_double(inFile, interleavedBuf + numRead * fileChannelCount, frameCount - numRead);
 
 		sf_close(inFile);
 		inFile = NULL;
 
-		float** bufs = new float*[fileChannelCount];
+		double** bufs = new double*[fileChannelCount];
 		for (unsigned i = 0; i < fileChannelCount; i++)
 		{
-			float* buf = new float[frameCount];
-			float* p = interleavedBuf + i;
+			double* buf = new double[frameCount];
+			double* p = interleavedBuf + i;
 			for (unsigned j = 0; j < frameCount; j++)
 			{
 				buf[j] = p[j * fileChannelCount];
@@ -87,7 +87,7 @@ vector<wstring> ConvolutionFilter::initialize(float sampleRate, unsigned maxFram
 			bufs[i] = buf;
 		}
 
-		fftwf_make_planner_thread_safe();
+		fftw_make_planner_thread_safe();
 		filters = (HConvSingle*)MemoryHelper::alloc(sizeof(HConvSingle) * channelCount);
 		for (unsigned i = 0; i < channelCount; i++)
 		{
@@ -106,20 +106,20 @@ vector<wstring> ConvolutionFilter::initialize(float sampleRate, unsigned maxFram
 }
 
 #pragma AVRT_CODE_BEGIN
-void ConvolutionFilter::process(float** output, float** input, unsigned frameCount)
+void ConvolutionFilter::process(double** output, double** input, unsigned frameCount)
 {
 	if (filters == NULL)
 		return;
 
 	for (unsigned i = 0; i < channelCount; i++)
 	{
-		float* inputChannel = input[i];
-		float* outputChannel = output[i];
+		double* inputChannel = input[i];
+		double* outputChannel = output[i];
 		HConvSingle* filter = &filters[i];
 
 		hcPutSingle(filter, inputChannel);
 		hcProcessSingle(filter);
-		hcGetSingle(filter, outputChannel);
+		hcGetSingle(filter, outputChannel);		
 	}
 }
 #pragma AVRT_CODE_END
@@ -128,8 +128,9 @@ void ConvolutionFilter::cleanup()
 {
 	if (filters != NULL)
 	{
-		for (unsigned i = 0; i < channelCount; i++)
+		for (unsigned i = 0; i < channelCount; i++) {
 			hcCloseSingle(&filters[i]);
+		}
 
 		MemoryHelper::free(filters);
 		filters = NULL;

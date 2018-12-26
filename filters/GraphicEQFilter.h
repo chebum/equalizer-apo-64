@@ -33,13 +33,13 @@ public:
 	virtual ~GraphicEQFilter();
 	bool getInPlace() override {return true;}
 	std::vector<std::wstring> initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames) override;
-	void process(float** output, float** input, unsigned frameCount) override;
+	void process(double** output, double** input, unsigned frameCount) override;
 
 	const std::vector<FilterNode>& getNodes();
 
 private:
 	void cleanup();
-	void mps(fftwf_complex* timeData, fftwf_complex* freqData, fftwf_plan planForward, fftwf_plan planReverse);
+	void mps(fftw_complex* timeData, fftw_complex* freqData, fftw_plan planForward, fftw_plan planReverse);
 
 	std::vector<FilterNode> nodes;
 	unsigned filterLength;

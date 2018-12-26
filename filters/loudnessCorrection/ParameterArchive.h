@@ -129,9 +129,21 @@ public:
 		return outputParameter;
 	}
 
+	/*void add(const bool parameter, const std::wstring name)
+	{
+		std::wstring nameStr = name;
+		if (!nameStr.empty())
+		{
+			_serializedParamters += nameStr;
+			_serializedParamters += L" ";
+		}
+		_serializedParamters += to_WString_type_traits<bool>::cast_ToWString(parameter);
+		_serializedParamters += L" ";
+	};*/
+
 	template<typename T> void add(const T& parameter, const std::wstring& name)
 	{
-		std::wstring nameStr = to_WString_type_traits<std::wstring>::cast_ToWString(name);
+		std::wstring nameStr = name;
 		if (!nameStr.empty())
 		{
 			_serializedParamters += nameStr;
@@ -140,6 +152,18 @@ public:
 		_serializedParamters += to_WString_type_traits<T>::cast_ToWString(parameter);
 		_serializedParamters += L" ";
 	};
+
+	/*template<typename T, typename U> void add(const T& parameter, const U& name)
+	{
+		std::wstring nameStr = to_WString_type_traits<U>::cast_ToWString(name);
+		if (!nameStr.empty())
+		{
+			_serializedParamters += nameStr;
+			_serializedParamters += L" ";
+		}
+		_serializedParamters += to_WString_type_traits<T>::cast_ToWString(parameter);
+		_serializedParamters += L" ";
+	};*/
 
 	template<typename T> int get(T& parameter, const std::wregex& searchArgument)
 	{
