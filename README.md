@@ -9,7 +9,15 @@ No functionality was added or modified. The source code is based on commit *r73*
 
 ## Installation
 
-1. Install standard version of EqualizerAPO. Do not perform configuration yet.
-2. Save a copy of the original EqualizerAPO.dll file in case you'd like to restore original installation.
-3. Unpack the archive from the files section into the Equalizer APO installation folder. This will replace the EqualizerAPO.dll file.
-4. Run the Configuration tool as usual. After reboot EqualizerAPO will use 64-bit processing engine.
+1. You will need standard Equalizer APO installed on your system.
+2. Disable Equalizer APO for all audio devices.
+3. Reboot your computer.
+4. Unpack the [attached zip archive](https://github.com/chebum/equalizer-apo-64/releases/) into the Equalizer APO installation folder. Replace EqualizerAPO.dll. Please backup the original file before doing this.
+5. Re-enable Equalizer APO and reboot. This will load modified 64-bit audio processing engine.
+
+## Uninstallation
+
+1. Disable Equalzier APO for all audio devices.
+2. Reboot your computer.
+3. Replace the EqualizerAPO.dll with the original backup you created when installing 64-bit version.
+4. Re-enable Equalizer APO and reboot.
